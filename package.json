@@ -7,6 +7,7 @@
     "dev": "tsx src/index.ts",
     "dev:langgraph-agent": "tsx src/index-langchain-agent.ts",
     "dev:google": "tsx src/index-google.ts",
+    "dev:google:structured-tools": "tsx src/index-google-structured-tools.ts",
     "dev:google:invoke": "tsx src/index-google-model-invoke.ts",
     "dev:google:stream": "tsx src/index-google-model-stream.ts"
   },
