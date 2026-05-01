@@ -1,3 +1,55 @@
+/**
+ * 原理
+ *
+ * 这一章学的是 LangChain 正式的 middleware API，也就是 `createMiddleware(...)`。
+ * 如果上一章是在学“中间件思想”，那这一章就是在看“LangChain 把这种思想正式落成了什么接口”。
+ *
+ * 官方文档里 middleware 的位置很明确：
+ * 它是挂在 agent 执行生命周期上的钩子系统，
+ * 让你可以在模型调用前后、工具调用前后、agent 开始和结束时插入自定义逻辑。
+ *
+ * 也就是说，middleware 的本质不是替代 agent，
+ * 而是“围绕 agent 的执行过程做观察、修改和增强”。
+ *
+ * 在这份代码里，使用的是最容易理解的一组钩子：
+ * - `beforeModel`：在模型真正调用前触发
+ * - `afterModel`：在模型返回结果后触发
+ *
+ * 作用
+ *
+ * 这种机制特别适合放那些“你每次都可能要做，但又不属于主业务回答本身”的逻辑，
+ * 比如日志、输入检查、耗时统计、提示词增强、输出审查、fallback、重试等。
+ *
+ * 通俗理解
+ *
+ * 如果说 `createAgent(...)` 建出来的是主流程，
+ * 那 middleware 就像挂在主流程边上的拦截器。
+ * 每次数据路过时，你都可以看一眼、记一笔、改一点，甚至决定后面怎么继续。
+ *
+ * 代码聚焦
+ *
+ * 这份代码里最关键的结构有两层：
+ * 1. `const loggingMiddleware = createMiddleware({...})`
+ *    这一步是在正式定义一个可挂载到 agent 生命周期里的中间件。
+ * 2. `middleware: [loggingMiddleware]`
+ *    这一步是在把中间件真正接到 agent 上。
+ *
+ * 然后再看中间件内部：
+ * `beforeModel: (state) => { ... }`
+ * `afterModel: (state) => { ... }`
+ *
+ * 这两句的意义非常直接：
+ * - 模型调用前，我可以先读取当前 state.messages 做日志或检查
+ * - 模型调用后，我可以再读取最后一条消息做记录或后处理
+ *
+ * 所以这章真正要掌握的是：
+ * LangChain 的 middleware 不是一个抽象概念，
+ * 而是一套能正式挂进 agent 生命周期的钩子接口。
+ *
+ * 官方文档
+ * https://docs.langchain.com/oss/javascript/langchain/middleware
+ * https://docs.langchain.com/oss/javascript/langchain/structured-output
+ */
 import "dotenv/config";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ProxyAgent, setGlobalDispatcher } from "undici";

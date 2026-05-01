@@ -1,3 +1,55 @@
+/**
+ * 原理
+ *
+ * 这一章学的是两种能力的组合：
+ * 先用 tool 补充外部信息，再用 structured output 约束最终返回格式。
+ * 这是非常典型的真实业务写法，因为很多场景既需要“信息正确”，也需要“格式稳定”。
+ *
+ * 单独看这两种能力：
+ * - tool calling 解决“模型没有资料怎么办”
+ * - structured output 解决“结果怎么稳定交给程序”
+ *
+ * 把它们合起来后，整体链路就会变成：
+ * 1. 先把搜索工具绑定给模型
+ * 2. 模型判断当前问题是否需要搜索
+ * 3. 如果需要，就调用 tool 获取额外资料
+ * 4. 工具结果回到消息上下文后，再让模型整理最终答案
+ * 5. 最终答案不是随意文本，而是一个符合 schema 的对象
+ *
+ * 作用
+ *
+ * 这一层解决的是“既要外部资料，又要结构稳定”的问题。
+ * 比如前端要展示一张回答卡片，还要标记是否使用过搜索、有哪些来源链接，
+ * 这时组合使用 tool + schema 就很自然。
+ *
+ * 通俗理解
+ *
+ * 可以把这章理解成两步走：
+ * 第一步先去外面找资料，第二步再按固定模板交答案。
+ * 换句话说，一个能力负责“找内容”，另一个能力负责“整理格式”。
+ *
+ * 代码聚焦
+ *
+ * 这份代码里最关键的结构不是某一行，而是两段串联：
+ * 1. `const modelWithTools = model.bindTools([searchTool])`
+ *    这一段负责让模型拥有“可以先搜索”的能力。
+ * 2. `const structuredModel = model.withStructuredOutput(answerSchema, ...)`
+ *    这一段负责让最终输出变成固定对象。
+ *
+ * 中间还有一个关键细节：
+ * 当 tool 执行完后，代码会把结果变成 `ToolMessage` 加回 `messages`，
+ * 然后再让结构化模型基于这份上下文产出最终对象。
+ *
+ * 所以这章真正要理解的是：
+ * tool 和 structured output 并不是二选一，
+ * 而是“一个扩展信息来源，一个约束结果形态”，可以自然地串在一起。
+ *
+ * 官方文档
+ * https://docs.langchain.com/oss/javascript/langchain/tools
+ * https://docs.langchain.com/oss/javascript/langchain/models
+ * https://docs.langchain.com/oss/javascript/langchain/structured-output
+ * https://docs.langchain.com/oss/javascript/langchain/messages
+ */
 import "dotenv/config";
 import {
   HumanMessage,

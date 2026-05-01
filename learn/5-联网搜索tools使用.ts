@@ -1,3 +1,52 @@
+/**
+ * 原理
+ *
+ * 这一章学的是“为什么要把联网搜索做成 tool，而不是让模型自己硬答”。
+ * 官方文档里提到，tools 的价值就在于扩展模型能力，
+ * 让模型可以获取实时数据、访问外部系统、执行宿主程序里的动作。
+ *
+ * 联网搜索正是最典型的一类工具：
+ * 模型自己并不直接访问互联网，
+ * 它只能先发出一个 tool call，请宿主代码去真正执行搜索。
+ *
+ * 所以这章的底层链路和上一章的 tool calling 是一致的，只是工具换成了搜索：
+ * 1. 用 `tool(...)` 把 Tavily 搜索能力包装成 LangChain 工具
+ * 2. 用 `model.bindTools(...)` 让模型知道“你现在可以搜索网页”
+ * 3. 当模型判断问题需要最新资料时，就会返回 `tool_calls`
+ * 4. 代码调用 Tavily API 拿到搜索结果
+ * 5. 再把这些结果作为 `ToolMessage` 回传给模型，让模型基于结果给出最终回答
+ *
+ * 作用
+ *
+ * 这一层解决的是“模型如何回答新鲜信息”。
+ * 比如最新文档、近期新闻、外部页面、API 信息、版本差异，
+ * 这些都不适合只靠模型参数记忆来答。
+ *
+ * 通俗理解
+ *
+ * 可以把它理解成模型在说：
+ * “这个问题我不该闭眼猜，我先上网查一下，再回来告诉你。”
+ * 注意，真正执行“上网查”的不是模型本身，而是你代码里的搜索工具。
+ *
+ * 代码聚焦
+ *
+ * 这份代码有三层特别值得看：
+ * 1. `const tavilyWebSearch = tool(...)`
+ *    这一层是把搜索能力包装成模型可理解的工具。
+ * 2. `const searchResponse = await tavilySearch(...)`
+ *    这一层是真正去调用外部搜索接口。
+ * 3. `messages.push(normalizedToolMessage)`
+ *    这一层是把搜索结果送回模型，让模型继续组织最终答案。
+ *
+ * 也就是说，这章不只是“会用 Tavily”而已，
+ * 更重要的是看懂：
+ * 外部工具如何进入 agent 推理链路，并成为模型回答的一部分。
+ *
+ * 官方文档
+ * https://docs.langchain.com/oss/javascript/langchain/tools
+ * https://docs.langchain.com/oss/javascript/langchain/models
+ * https://docs.langchain.com/oss/javascript/langchain/messages
+ */
 import "dotenv/config";
 import {
   AIMessage,

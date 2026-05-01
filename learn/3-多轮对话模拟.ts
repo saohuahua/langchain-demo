@@ -1,3 +1,43 @@
+/**
+ * 原理
+ *
+ * 这一章学的是“多轮对话到底是怎么成立的”。
+ * 很多人一开始会以为模型真的把前面的聊天永久记住了，
+ * 但从 LangChain 的消息机制来看，真正发生的事情是：
+ * 你在每一轮调用时，把之前的消息历史再次一起传给模型。
+ *
+ * 官方文档里把 messages 视为模型上下文的基本单位。
+ * 这意味着多轮对话并不是一个额外魔法，而是 message 机制的自然结果：
+ * 只要上一轮的 `HumanMessage / AIMessage` 继续留在消息列表里，
+ * 模型下一轮就能“看到”前文，于是回答就会显得连贯。
+ *
+ * 作用
+ *
+ * 这一层解决的是“怎么让回答接得上前文”。
+ * 比如上一轮提过某个概念，这一轮可以继续追问；
+ * 或者上一轮告诉模型“我叫小王”，下一轮问“我刚才说我叫什么”，它就能答出来。
+ *
+ * 通俗理解
+ *
+ * 可以把它理解成你每次发新问题时，都顺手把前面的聊天记录截图一起带给模型。
+ * 模型不是凭空记住了，而是你每次都把它需要参考的历史补给它。
+ *
+ * 代码聚焦
+ *
+ * 这份代码最关键的不是某一个 API，而是整串 `messages` 的构造方式。
+ * 像下面这种写法：
+ * `const messages: BaseMessage[] = [SystemMessage, HumanMessage, AIMessage, ...]`
+ * 本质上就是在显式告诉模型：“下面这些历史对话，都是你当前回答时必须参考的上下文。”
+ *
+ * 所以这章最重要的理解不是“怎么写数组”，
+ * 而是要真正明白：
+ * 多轮对话的连续性，来自“历史消息被持续保留并重复传入”，
+ * 而不是来自模型自己拥有一个神秘的永久记忆。
+ *
+ * 官方文档
+ * https://docs.langchain.com/oss/javascript/langchain/messages
+ * https://docs.langchain.com/oss/javascript/langchain/short-term-memory
+ */
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import path from "node:path";

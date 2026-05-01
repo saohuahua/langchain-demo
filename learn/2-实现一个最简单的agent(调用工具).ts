@@ -1,3 +1,52 @@
+/**
+ * 原理
+ *
+ * 这一章学的是 Agent 最核心的能力：让模型自己决定是否调用工具。
+ * 官方文档里对 tools 的定义很明确：
+ * tool 是“带明确定义输入输出的可调用函数”，模型会根据上下文判断要不要调用它。
+ *
+ * 所以和上一章最大的区别不是“多了一个函数”，而是推理流程变了：
+ * 普通 `invoke(...)` 是“用户提问 -> 模型直接回答”
+ * agent tool calling 是“用户提问 -> 模型先判断要不要调工具 -> 工具执行 -> 模型再回答”
+ *
+ * 你可以把这章的底层过程记成 5 步：
+ * 1. 先用 `tool(...)` 定义工具，让模型知道这个工具叫什么、做什么、参数长什么样
+ * 2. 再用 `model.bindTools(tools)` 把工具能力声明给模型
+ * 3. 模型返回 `tool_calls`，表示它想调用哪个工具、传什么参数
+ * 4. 宿主代码真正执行工具
+ * 5. 再把工具结果包装成 `ToolMessage` 放回消息历史，让模型继续推理
+ *
+ * 作用
+ *
+ * 这一层解决的是“模型知识不够时怎么办”。
+ * 因为模型本身只能基于已有参数推理，但工具可以帮它接触外部能力，
+ * 比如本地知识库、数据库、搜索接口、计算逻辑、业务服务。
+ *
+ * 通俗理解
+ *
+ * 可以把模型理解成“会思考但不会亲自动手的人”，
+ * 把 tool 理解成“它可以吩咐去做事的助手”。
+ * 模型负责决定什么时候该查资料、什么时候该算一算，
+ * 而真正执行这些动作的是代码里的工具函数。
+ *
+ * 代码聚焦
+ *
+ * 这份代码里有三句特别关键：
+ * 1. `const searchVueInterviewKnowledge = tool(...)`
+ *    这句是在定义一个“可被模型调用”的工具，而不是普通函数。
+ * 2. `const modelWithTools = model.bindTools(tools)`
+ *    这句是在告诉模型：你现在有工具可用了。
+ * 3. `messages.push(new ToolMessage(...))`
+ *    这句是在把工具执行结果重新喂回模型，形成 agent 的闭环。
+ *
+ * 这也是为什么我说这份代码比直接用 `createAgent(...)` 更适合入门：
+ * 你能直接看到 agent loop 的骨架，而不是只看到一个封装后的高级接口。
+ *
+ * 官方文档
+ * https://docs.langchain.com/oss/javascript/langchain/models
+ * https://docs.langchain.com/oss/javascript/langchain/tools
+ * https://docs.langchain.com/oss/javascript/langchain/messages
+ */
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
